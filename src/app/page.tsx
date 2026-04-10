@@ -97,7 +97,7 @@ function LandingPage() {
       </section>
 
       {/* Pain */}
-      <section className="pt-4 pb-16">
+      <section className="pt-0 pb-8">
         <div className="max-w-2xl mx-auto px-6 text-center space-y-6">
           <p className="text-muted leading-relaxed">
             You&apos;re sending contracts in email, files in Google Drive,
@@ -113,7 +113,7 @@ function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="py-16">
+      <section className="py-8">
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-card border border-border rounded-xl p-6">
