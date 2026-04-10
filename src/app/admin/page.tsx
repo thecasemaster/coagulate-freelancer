@@ -14,16 +14,17 @@ import {
 } from "recharts";
 
 interface Lead {
+  id: string;
   email: string;
   freelancer_type: string;
-  would_pay: string;
+  payment_intent: string;
   referral_source: string | null;
   referred_by: string | null;
   created_at: string;
 }
 
 interface EmailLog {
-  email: string;
+  lead_id: string;
   email_number: number;
   sent_at: string;
 }
@@ -40,7 +41,7 @@ interface DashboardData {
 type SortField =
   | "email"
   | "freelancer_type"
-  | "would_pay"
+  | "payment_intent"
   | "referral_source"
   | "referred_by"
   | "created_at"
@@ -124,7 +125,7 @@ export default function AdminPage() {
     if (!data) return [];
     const counts: Record<string, number> = { yes: 0, maybe: 0, no: 0 };
     data.leads.forEach((l) => {
-      const v = (l.would_pay || "").toLowerCase();
+      const v = (l.payment_intent || "").toLowerCase();
       if (v in counts) counts[v]++;
     });
     return Object.entries(counts).map(([intent, count]) => ({ intent, count }));
@@ -145,7 +146,7 @@ export default function AdminPage() {
     if (!data) return new Map<string, number>();
     const m = new Map<string, number>();
     data.emailLogs.forEach((log) => {
-      m.set(log.email, (m.get(log.email) || 0) + 1);
+      m.set(log.lead_id, (m.get(log.lead_id) || 0) + 1);
     });
     return m;
   }, [data]);
@@ -173,8 +174,8 @@ export default function AdminPage() {
       let aVal: string | number;
       let bVal: string | number;
       if (sortField === "emails_sent") {
-        aVal = emailsSentByLead.get(a.email) || 0;
-        bVal = emailsSentByLead.get(b.email) || 0;
+        aVal = emailsSentByLead.get(a.id) || 0;
+        bVal = emailsSentByLead.get(b.id) || 0;
       } else if (sortField === "created_at") {
         aVal = a.created_at || "";
         bVal = b.created_at || "";
@@ -272,7 +273,7 @@ export default function AdminPage() {
         {/* Row 1 — Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard label="Total Signups" value={data.totalSignups.toLocaleString()} />
-          <MetricCard label="&quot;Would Pay&quot; Rate" value={`${Math.round(data.wouldPayRate * 100)}%`} />
+          <MetricCard label="&quot;Would Pay&quot; Rate" value={`${data.wouldPayRate}%`} />
           <MetricCard label="Signups This Week" value={data.signupsThisWeek.toLocaleString()} />
           <MetricCard label="Referral Signups" value={data.referralSignups.toLocaleString()} />
         </div>
@@ -364,7 +365,7 @@ export default function AdminPage() {
                     [
                       ["email", "Email"],
                       ["freelancer_type", "Type"],
-                      ["would_pay", "Payment Intent"],
+                      ["payment_intent", "Payment Intent"],
                       ["referral_source", "Referral Source"],
                       ["referred_by", "Referred By"],
                       ["created_at", "Signup Date"],
@@ -390,7 +391,7 @@ export default function AdminPage() {
                       {lead.freelancer_type}
                     </td>
                     <td className="py-2 pr-4" style={{ color: "#a1a1aa" }}>
-                      {lead.would_pay}
+                      {lead.payment_intent}
                     </td>
                     <td className="py-2 pr-4" style={{ color: "#a1a1aa" }}>
                       {lead.referral_source || "—"}
@@ -402,7 +403,7 @@ export default function AdminPage() {
                       {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : "—"}
                     </td>
                     <td className="py-2 pr-4" style={{ color: "#a1a1aa" }}>
-                      {emailsSentByLead.get(lead.email) || 0}
+                      {emailsSentByLead.get(lead.id) || 0}
                     </td>
                   </tr>
                 ))}
