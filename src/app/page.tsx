@@ -97,7 +97,7 @@ function LandingPage() {
       </section>
 
       {/* Pain */}
-      <section className="py-16">
+      <section className="pt-4 pb-16">
         <div className="max-w-2xl mx-auto px-6 text-center space-y-6">
           <p className="text-muted leading-relaxed">
             You&apos;re sending contracts in email, files in Google Drive,
