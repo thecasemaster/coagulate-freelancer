@@ -1,183 +1,137 @@
 "use client";
 
-import { useState, FormEvent, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import styles from "./page.module.css";
 
-function LandingPage() {
-  const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+const barlow = Barlow_Condensed({
+  variable: "--font-barlow",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
 
-    const referralSource = searchParams.get("ref") || undefined;
-    const referredBy = searchParams.get("r") || undefined;
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-plex-sans",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+});
 
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, referralSource, referredBy }),
-      });
+export default function ComingSoon() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-      const data = await res.json();
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      if (!res.ok) {
-        if (res.status === 409 || data.error?.toLowerCase().includes("already")) {
-          setError("You're already on the list!");
-        } else {
-          setError(data.error || "Something went wrong. Please try again.");
-        }
-        setLoading(false);
-        return;
+    let w = 0;
+    let h = 0;
+
+    const N = 64;
+    const paper = "242,237,227";
+    const rust = "200,91,28";
+    type Particle = {
+      x: number;
+      y: number;
+      r: number;
+      vx: number;
+      vy: number;
+      o: number;
+      accent: boolean;
+    };
+    const pts: Particle[] = [];
+
+    function seed() {
+      pts.length = 0;
+      for (let i = 0; i < N; i++) {
+        pts.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: 1 + Math.random() * 2.2,
+          vx: (Math.random() - 0.5) * 0.1,
+          vy: (Math.random() - 0.5) * 0.1,
+          o: 0.05 + Math.random() * 0.18,
+          accent: Math.random() < 0.08,
+        });
       }
-
-      setSuccess(true);
-      if (data.referralCode) {
-        window.location.href = `/welcome?code=${data.referralCode}`;
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
     }
-  }
+
+    function size() {
+      if (!canvas || !ctx) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const oldW = w;
+      const oldH = h;
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Keep the field evenly distributed across viewport changes; a zero-size
+      // viewport (e.g. hydrating in a hidden/unsized pane) needs a full reseed.
+      if (pts.length && oldW > 0 && oldH > 0) {
+        for (const p of pts) {
+          p.x = (p.x / oldW) * w;
+          p.y = (p.y / oldH) * h;
+        }
+      } else {
+        seed();
+      }
+    }
+    size();
+    window.addEventListener("resize", size);
+
+    let raf = 0;
+    function step() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of pts) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = w;
+        if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h;
+        if (p.y > h) p.y = 0;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${p.accent ? rust : paper},${p.o})`;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(step);
+    }
+    step();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", size);
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Hero */}
-      <section className="py-24 md:py-32">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
-            One link. Every client. Zero chaos.
-          </h1>
-          <p className="mt-6 text-lg md:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-            Give your freelance clients a branded portal for files, invoices,
-            messages, and updates — powered by AI that handles the admin you
-            hate.
-          </p>
-
-          <form
-            onSubmit={handleSubmit}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto"
-          >
-            <input
-              type="email"
-              required
-              placeholder="you@freelancer.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-card border border-border rounded-lg px-4 py-3 text-foreground w-full focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-accent hover:bg-accent-light text-white font-semibold rounded-lg px-6 py-3 transition w-full sm:w-auto whitespace-nowrap disabled:opacity-50"
-            >
-              {loading ? "Submitting..." : "Get Early Access"}
-            </button>
-          </form>
-
-          {error && (
-            <p className="mt-4 text-sm text-red-400">{error}</p>
-          )}
-          {success && !error && (
-            <p className="mt-4 text-sm text-green-400">Redirecting...</p>
-          )}
-
-          <p className="mt-4 text-sm text-muted">
-            Free during early access. $19/mo after launch.
-          </p>
+    <div
+      className={`${barlow.variable} ${plexMono.variable} ${plexSans.variable} ${styles.page}`}
+    >
+      <canvas ref={canvasRef} className={styles.canvas} />
+      <div className={styles.wrap}>
+        <div className={styles.status}>In progress</div>
+        <div className={styles.mark}>
+          Coagulate<span className={styles.markDot}>.dev</span>
         </div>
-      </section>
-
-      {/* Pain */}
-      <section className="-mt-14 pb-8">
-        <div className="max-w-2xl mx-auto px-6 text-center space-y-6">
-          <p className="text-muted leading-relaxed">
-            You&apos;re sending contracts in email, files in Google Drive,
-            invoices through Stripe, and updates over Slack.
-          </p>
-          <p className="text-muted leading-relaxed">
-            Your client has no idea where anything is. Neither do you.
-          </p>
-          <p className="text-muted leading-relaxed">
-            You look scattered. You&apos;re not — your tools are.
-          </p>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-8">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="text-3xl mb-3">📁</div>
-              <h3 className="text-lg font-semibold mb-2">
-                One link, everything organized
-              </h3>
-              <p className="text-muted leading-relaxed">
-                Contracts, invoices, files, and messages — your clients get one
-                branded portal instead of a scattered mess.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="text-3xl mb-3">🤖</div>
-              <h3 className="text-lg font-semibold mb-2">
-                AI writes the boring stuff
-              </h3>
-              <p className="text-muted leading-relaxed">
-                Project updates, invoice reminders, status summaries — drafted
-                by AI, sent by you in one click.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="text-3xl mb-3">💸</div>
-              <h3 className="text-lg font-semibold mb-2">
-                Get paid without chasing
-              </h3>
-              <p className="text-muted leading-relaxed">
-                Built-in invoicing with automatic reminders. No more awkward
-                follow-up emails.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="text-3xl mb-3">✨</div>
-              <h3 className="text-lg font-semibold mb-2">
-                Your brand, not ours
-              </h3>
-              <p className="text-muted leading-relaxed">
-                Custom colors, logo, and subdomain. Clients see your brand — you
-                look like an agency.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <section className="py-16">
-        <p className="text-center text-muted text-sm px-6">
-          Built for freelance designers, developers, copywriters, photographers,
-          and consultants.
+        <p className={styles.blurb}>
+          Coagulate Dev helps small businesses turn scattered tools and messy
+          workflows into clear, automated systems — CRM and pipeline setup,
+          workflow automation, AI-driven processes, and the websites and
+          documentation to back it all up.{" "}
+          <strong>The site is being built right now.</strong>
         </p>
-      </section>
+      </div>
     </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <Suspense>
-      <LandingPage />
-    </Suspense>
   );
 }
