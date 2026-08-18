@@ -131,6 +131,24 @@ export default function ComingSoon() {
           documentation to back it all up.{" "}
           <strong>The site is being built right now.</strong>
         </p>
+
+        <a
+          className={styles.product}
+          href="https://storage-analyst.vercel.app/welcome"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span className={styles.productLabel}>Now building</span>
+          <span className={styles.productName}>Storage Analyst</span>
+          <span className={styles.productBlurb}>
+            Underwrite a self-storage deal in the time it takes to read the rent
+            roll. Rent rolls and T-12s in, rent benchmarking, financing
+            scenarios, and a straight answer on whether the deal works.
+          </span>
+          <span className={styles.productCta}>
+            Join the waitlist<span aria-hidden="true"> →</span>
+          </span>
+        </a>
       </div>
     </div>
   );
